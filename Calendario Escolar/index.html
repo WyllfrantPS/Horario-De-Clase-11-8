@@ -1,885 +1,925 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Horario de Clases Virtuales</title>
-  <style>
-    :root {
-      --bg-primary: #0f172a;
-      --bg-card: #1e293b;
-      --bg-hover: #334155;
-      --text-main: #f8fafc;
-      --text-sub: #94a3b8;
-      --accent: #38bdf8;
-      --accent-hover: #0284c7;
-      --border: #334155;
-      --live-badge: #22c55e;
-      --break-color: #f59e0b;
-      --error-color: #ef4444;
-    }
-
-    .light-theme {
-      --bg-primary: #f1f5f9;
-      --bg-card: #ffffff;
-      --bg-hover: #e2e8f0;
-      --text-main: #0f172a;
-      --text-sub: #64748b;
-      --accent: #0284c7;
-      --accent-hover: #0369a1;
-      --border: #cbd5e1;
-      --live-badge: #16a34a;
-      --break-color: #d97706;
-      --error-color: #dc2626;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-primary);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 12px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    .app-container {
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      padding-bottom: 30px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-card);
-      padding: 14px 16px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .admin-btn {
-      background: var(--accent);
-      color: #ffffff;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .admin-btn.logged-in {
-      background: #ef4444;
-    }
-
-    .theme-toggle-btn {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      color: var(--text-main);
-    }
-
-    .status-banner {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--accent);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .status-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: var(--live-badge);
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.2); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-
-    .days-nav {
-      display: flex;
-      gap: 6px;
-      background: var(--bg-card);
-      padding: 6px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-    }
-
-    .day-btn {
-      flex: 1;
-      padding: 10px 0;
-      border: none;
-      background: transparent;
-      color: var(--text-sub);
-      font-weight: 600;
-      font-size: 0.85rem;
-      border-radius: 10px;
-      cursor: pointer;
-      text-align: center;
-    }
-
-    .day-btn.active {
-      background: var(--accent);
-      color: #ffffff;
-    }
-
-    .actions-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .time-slot {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .time-slot.clickable-card {
-      cursor: pointer;
-      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .time-slot.clickable-card:hover {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
-    }
-
-    .time-slot.active-now {
-      border: 2px solid var(--live-badge);
-      background: linear-gradient(to right, rgba(34, 197, 94, 0.08), transparent);
-    }
-
-    .time-slot.break-slot {
-      border-left: 4px solid var(--break-color);
-      background: rgba(245, 158, 11, 0.05);
-    }
-
-    .slot-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.8rem;
-      color: var(--text-sub);
-      font-weight: 600;
-    }
-
-    .class-card {
-      border-left: 4px solid var(--accent);
-      padding-left: 10px;
-      margin-top: 2px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .class-title {
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .class-details {
-      font-size: 0.8rem;
-      color: var(--text-sub);
-    }
-
-    .enter-class-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      margin-top: 4px;
-      background: var(--accent);
-      color: #ffffff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      font-weight: 700;
-      width: 100%;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      pointer-events: none; /* Toda la tarjeta maneja el clic */
-    }
-
-    .action-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 0.9rem;
-      padding: 4px;
-    }
-
-    .empty-slot {
-      font-size: 0.85rem;
-      color: var(--text-sub);
-      font-style: italic;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .add-inline-btn {
-      background: var(--bg-hover);
-      color: var(--text-main);
-      border: 1px dashed var(--border);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-
-    /* Modales */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 100;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal {
-      background: var(--bg-card);
-      border-radius: 16px;
-      padding: 20px;
-      width: 100%;
-      max-width: 400px;
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .input-group label {
-      font-size: 0.8rem;
-      color: var(--text-sub);
-      font-weight: 600;
-    }
-
-    .input-group input, .input-group select {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg-primary);
-      color: var(--text-main);
-      font-size: 0.9rem;
-      outline: none;
-    }
-
-    .row-range {
-      display: flex;
-      gap: 10px;
-    }
-
-    .row-range .input-group {
-      flex: 1;
-    }
-
-    .modal-buttons {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .btn-cancel {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .btn-save {
-      background: var(--accent);
-      border: none;
-      color: white;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .error-msg {
-      color: var(--error-color);
-      font-size: 0.8rem;
-      display: none;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- APLICACIÓN PRINCIPAL -->
-  <div class="app-container">
-    <header>
-      <div>
-        <h1 style="font-size: 1.1rem;">Mis Clases Virtuales</h1>
-        <div style="font-size: 0.75rem; color: var(--text-sub);" id="clockDisplay">Cargando hora...</div>
-      </div>
-      <div class="header-actions">
-        <button class="theme-toggle-btn" id="themeToggleBtn">🌙</button>
-        <button class="admin-btn" id="adminAuthBtn">Administrador</button>
-      </div>
-    </header>
-
-    <!-- Estado Sincronizado en Tiempo Real -->
-    <div class="status-banner">
-      <div class="status-header">
-        <div class="status-dot"></div>
-        <span>Estado en Vivo</span>
-      </div>
-      <div style="font-size: 0.95rem; font-weight: 600;" id="statusMainText">Sincronizando...</div>
-      <div style="font-size: 0.8rem; color: var(--text-sub);" id="statusSubText">Cargando...</div>
-    </div>
-
-    <!-- Navegación por Días -->
-    <nav class="days-nav">
-      <button class="day-btn" data-day="1">Lun</button>
-      <button class="day-btn" data-day="2">Mar</button>
-      <button class="day-btn" data-day="3">Mié</button>
-      <button class="day-btn" data-day="4">Jue</button>
-      <button class="day-btn" data-day="5">Vie</button>
-    </nav>
-
-    <div class="actions-bar">
-      <div style="font-size: 0.95rem; font-weight: 700;" id="selectedDayTitle">Lunes</div>
-    </div>
-
-    <!-- Bloques de Horas -->
-    <div class="timeline" id="timeline"></div>
-  </div>
-
-  <!-- MODAL INICIO DE SESIÓN DE ADMINISTRADOR -->
-  <div class="modal-overlay" id="adminLoginModal">
-    <div class="modal">
-      <h2>Acceso Administrador</h2>
-      <form id="adminLoginForm" style="display: flex; flex-direction: column; gap: 12px;">
-        <div class="input-group">
-          <label>Correo Electrónico</label>
-          <input type="email" id="adminEmail" placeholder="Correo de administrador" required>
-        </div>
-
-        <div class="input-group">
-          <label>Contraseña</label>
-          <input type="password" id="adminPassword" placeholder="••••••••" required>
-        </div>
-
-        <div class="error-msg" id="adminLoginError">Correo o contraseña incorrectos.</div>
-
-        <div class="modal-buttons">
-          <button type="button" class="btn-cancel" id="closeAdminModalBtn">Cancelar</button>
-          <button type="submit" class="btn-save">Ingresar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL PARA ASIGNAR / EDITAR CLASE -->
-  <div class="modal-overlay" id="classModal">
-    <div class="modal">
-      <h2 id="modalTitle">Asignar Clase Virtual</h2>
-      <form id="classForm" style="display: flex; flex-direction: column; gap: 10px;">
-        <input type="hidden" id="editingClassId">
-
-        <!-- Selector de Duración (Hora Inicio y Hora Fin) -->
-        <div class="row-range">
-          <div class="input-group">
-            <label>Desde la Hora</label>
-            <select id="inputStartSlot">
-              <option value="1">1.ª Hora (07:00)</option>
-              <option value="2">2.ª Hora (07:55)</option>
-              <option value="3">3.ª Hora (08:50)</option>
-              <option value="4">4.ª Hora (10:15)</option>
-              <option value="5">5.ª Hora (11:10)</option>
-              <option value="6">6.ª Hora (12:00)</option>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label>Hasta la Hora</label>
-            <select id="inputEndSlot">
-              <option value="1">1.ª Hora (07:55)</option>
-              <option value="2">2.ª Hora (08:50)</option>
-              <option value="3">3.ª Hora (09:45)</option>
-              <option value="4">4.ª Hora (11:10)</option>
-              <option value="5">5.ª Hora (12:00)</option>
-              <option value="6">6.ª Hora (13:00)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label>Materia / Nombre de la Clase</label>
-          <input type="text" id="inputName" placeholder="Ej: Mantenimiento de Hardware" required>
-        </div>
-
-        <div class="input-group">
-          <label>Profesor (Opcional)</label>
-          <input type="text" id="inputTeacher" placeholder="Ej: Ing. Rodríguez">
-        </div>
-
-        <div class="input-group">
-          <label>Enlace de la Clase (Meet / Zoom / Teams)</label>
-          <input type="url" id="inputLink" placeholder="https://meet.google.com/..." required>
-        </div>
-
-        <div class="error-msg" id="classFormError">La hora final debe ser posterior a la de inicio y no puede cruzar el descanso.</div>
-
-        <div class="modal-buttons">
-          <button type="button" class="btn-cancel" id="closeClassModalBtn">Cancelar</button>
-          <button type="submit" class="btn-save">Guardar Clase</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    // Estructura de periodos de clase
-    const SCHEDULE_SLOTS = [
-      { id: 1, label: "1.ª Hora", start: "07:00", end: "07:55", startMin: 7*60, endMin: 7*60 + 55, isBreak: false },
-      { id: 2, label: "2.ª Hora", start: "07:55", end: "08:50", startMin: 7*60 + 55, endMin: 8*60 + 50, isBreak: false },
-      { id: 3, label: "3.ª Hora", start: "08:50", end: "09:45", startMin: 8*60 + 50, endMin: 9*60 + 45, isBreak: false },
-      { id: "break", label: "Descanso", start: "09:45", end: "10:15", startMin: 9*60 + 45, endMin: 10*60 + 15, isBreak: true },
-      { id: 4, label: "4.ª Hora", start: "10:15", end: "11:10", startMin: 10*60 + 15, endMin: 11*60 + 10, isBreak: false },
-      { id: 5, label: "5.ª Hora", start: "11:10", end: "12:00", startMin: 11*60 + 10, endMin: 12*60, isBreak: false },
-      { id: 6, label: "6.ª Hora", start: "12:00", end: "13:00", startMin: 12*60, endMin: 13*60, isBreak: false }
-    ];
-
-    const ADMIN_EMAIL = "wyllfrant.personal@gmail.com";
-    const ADMIN_PASS = "1234";
-
-    // Estado local
-    let isAdminLoggedIn = JSON.parse(localStorage.getItem('virtual_admin_session')) || false;
-    let classList = JSON.parse(localStorage.getItem('virtual_classes_multislot_db')) || [];
-    let currentDay = new Date().getDay();
-    if (currentDay < 1 || currentDay > 5) currentDay = 1;
-
-    // Elementos DOM
-    const clockDisplay = document.getElementById('clockDisplay');
-    const adminAuthBtn = document.getElementById('adminAuthBtn');
-    const adminLoginModal = document.getElementById('adminLoginModal');
-    const adminLoginForm = document.getElementById('adminLoginForm');
-    const adminEmail = document.getElementById('adminEmail');
-    const adminPassword = document.getElementById('adminPassword');
-    const adminLoginError = document.getElementById('adminLoginError');
-    const closeAdminModalBtn = document.getElementById('closeAdminModalBtn');
-
-    const classModal = document.getElementById('classModal');
-    const closeClassModalBtn = document.getElementById('closeClassModalBtn');
-    const classForm = document.getElementById('classForm');
-    const classFormError = document.getElementById('classFormError');
-
-    const dayButtons = document.querySelectorAll('.day-btn');
-    const selectedDayTitle = document.getElementById('selectedDayTitle');
-    const timeline = document.getElementById('timeline');
-    const statusMainText = document.getElementById('statusMainText');
-    const statusSubText = document.getElementById('statusSubText');
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
-
-    const dayNames = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
-
-    function init() {
-      setupEventListeners();
-      updateAdminButton();
-      selectDay(currentDay);
-      updateClockAndStatus();
-      setInterval(updateClockAndStatus, 1000);
-    }
-
-    function updateAdminButton() {
-      if (isAdminLoggedIn) {
-        adminAuthBtn.textContent = "Salir Admin 🚪";
-        adminAuthBtn.classList.add('logged-in');
-      } else {
-        adminAuthBtn.textContent = "Administrador";
-        adminAuthBtn.classList.remove('logged-in');
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Horario INEM 11-08</title>
+
+    <style>
+      :root {
+        --bg-primary: #0f172a;
+        --bg-card: #1e293b;
+        --bg-hover: #334155;
+        --text-main: #f8fafc;
+        --text-sub: #94a3b8;
+        --accent: #38bdf8;
+        --border: #334155;
+        --live-badge: #ef4444;
+        --card-live-bg: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        --card-live-border: #38bdf8;
       }
-    }
 
-    function setupEventListeners() {
-      adminAuthBtn.addEventListener('click', () => {
-        if (isAdminLoggedIn) {
-          isAdminLoggedIn = false;
-          localStorage.setItem('virtual_admin_session', false);
-          updateAdminButton();
-          renderTimeline();
-        } else {
-          adminLoginForm.reset();
-          adminLoginError.style.display = 'none';
-          adminLoginModal.classList.add('open');
+      .light-theme {
+        --bg-primary: #f1f5f9;
+        --bg-card: #ffffff;
+        --bg-hover: #e2e8f0;
+        --text-main: #0f172a;
+        --text-sub: #64748b;
+        --accent: #0284c7;
+        --border: #cbd5e1;
+        --live-badge: #dc2626;
+        --card-live-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        --card-live-border: #0284c7;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+      }
+
+      body {
+        background-color: var(--bg-primary);
+        color: var(--text-main);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 12px;
+        transition:
+          background-color 0.3s,
+          color 0.3s;
+      }
+
+      .app-container {
+        width: 100%;
+        max-width: 480px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding-bottom: 30px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg-card);
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+
+      .theme-toggle-btn {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: var(--text-main);
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* TARJETA DE ESTADO EN VIVO EN LA PARTE SUPERIOR */
+      .live-status-card {
+        background: var(--card-live-bg);
+        border: 2px solid var(--card-live-border);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .live-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .live-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--live-badge);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--live-badge);
+        animation: blink 1.2s infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
         }
-      });
-
-      closeAdminModalBtn.addEventListener('click', () => {
-        adminLoginModal.classList.remove('open');
-      });
-
-      adminLoginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = adminEmail.value.trim().toLowerCase();
-        const password = adminPassword.value.trim();
-
-        if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
-          isAdminLoggedIn = true;
-          localStorage.setItem('virtual_admin_session', true);
-          adminLoginModal.classList.remove('open');
-          updateAdminButton();
-          renderTimeline();
-        } else {
-          adminLoginError.style.display = 'block';
+        50% {
+          opacity: 0.3;
+          transform: scale(0.85);
         }
-      });
+      }
 
-      dayButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const day = parseInt(btn.getAttribute('data-day'));
-          selectDay(day);
+      .live-class-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--text-main);
+        line-height: 1.2;
+      }
+
+      .live-time-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 4px;
+      }
+
+      .time-countdown {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .time-end-at {
+        font-size: 0.82rem;
+        color: var(--text-sub);
+      }
+
+      .progress-bar-container {
+        width: 100%;
+        height: 6px;
+        background: var(--bg-hover);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 2px;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--accent);
+        width: 0%;
+        transition: width 0.5s ease;
+      }
+
+      .days-nav {
+        display: flex;
+        gap: 6px;
+        background: var(--bg-card);
+        padding: 6px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+      }
+
+      .day-btn {
+        flex: 1;
+        padding: 10px 0;
+        border: none;
+        background: transparent;
+        color: var(--text-sub);
+        font-weight: 600;
+        font-size: 0.85rem;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: center;
+      }
+
+      .day-btn.active {
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .actions-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .time-slot {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .time-slot.clickable-card {
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      .time-slot.clickable-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
+      }
+
+      .time-slot.active-now {
+        border: 2px solid var(--accent);
+        background: linear-gradient(
+          to right,
+          rgba(56, 189, 248, 0.08),
+          transparent
+        );
+      }
+
+      .slot-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--text-sub);
+        font-weight: 600;
+      }
+
+      .class-card {
+        border-left: 4px solid var(--accent);
+        padding-left: 10px;
+        margin-top: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .class-title {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .enter-class-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 4px;
+        background: var(--accent);
+        color: #ffffff;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        width: 100%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .class-links {
+        display: flex;
+        gap: 8px;
+      }
+
+      .class-links .enter-class-btn {
+        flex: 1;
+        padding: 10px 8px;
+      }
+
+      .enter-class-btn.alternate-link-btn {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        box-shadow: none;
+      }
+
+      .enter-class-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .empty-slot {
+        font-size: 0.85rem;
+        color: var(--text-sub);
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <header>
+        <div>
+          <h1 style="font-size: 1.1rem">INEM - Grupo 11-08</h1>
+          <div
+            style="font-size: 0.75rem; color: var(--text-sub)"
+            id="clockDisplay"
+          >
+            Viernes, 23:12:34
+          </div>
+        </div>
+        <div class="header-actions">
+          <button
+            class="theme-toggle-btn"
+            id="themeToggleBtn"
+            aria-label="Cambiar tema"
+          >
+            🌙
+          </button>
+        </div>
+      </header>
+
+      <!-- TARJETA DESTACADA EN LA PARTE SUPERIOR -->
+      <div class="live-status-card" id="liveCard">
+        <div class="live-card-header">
+          <div class="live-tag">
+            <div class="live-dot"></div>
+            <span id="liveTagText">JORNADA FINALIZADA</span>
+          </div>
+          <div class="time-end-at" id="liveEndText"></div>
+        </div>
+
+        <div class="live-class-title" id="liveClassTitle">
+          ¡Has terminado por hoy!
+        </div>
+
+        <div class="live-time-info">
+          <div class="time-countdown" id="liveCountdown">Nos vemos mañana</div>
+        </div>
+
+        <div class="progress-bar-container">
+          <div
+            class="progress-bar-fill"
+            id="progressBarFill"
+            style="width: 100%"
+          ></div>
+        </div>
+      </div>
+
+      <nav class="days-nav">
+        <button class="day-btn active" data-day="1">Lun</button>
+        <button class="day-btn" data-day="2">Mar</button>
+        <button class="day-btn" data-day="3">Mié</button>
+        <button class="day-btn" data-day="4">Jue</button>
+        <button class="day-btn" data-day="5">Vie</button>
+      </nav>
+
+      <div class="actions-bar">
+        <div style="font-size: 0.95rem; font-weight: 700" id="selectedDayTitle">
+          Horario del Lunes
+        </div>
+      </div>
+
+      <div class="timeline" id="timeline">
+        <div class="time-slot clickable-card">
+          <div class="slot-header">
+            <span>1.ª Hora a 2.ª Hora (07:00 - 08:50)</span>
+          </div>
+          <div class="class-card">
+            <div class="class-title">Filosofía</div>
+            <button class="enter-class-btn">💻 Entrar a Clase Virtual</button>
+          </div>
+        </div>
+        <div class="time-slot clickable-card">
+          <div class="slot-header">
+            <span>3.ª Hora a 4.ª Hora (08:50 - 11:10)</span>
+          </div>
+          <div class="class-card">
+            <div class="class-title">Inglés</div>
+            <button class="enter-class-btn">💻 Entrar a Clase Virtual</button>
+          </div>
+        </div>
+        <div class="time-slot clickable-card">
+          <div class="slot-header">
+            <span>5.ª Hora a 6.ª Hora (11:10 - 13:00)</span>
+          </div>
+          <div class="class-card">
+            <div class="class-title">Ciencias Económicas</div>
+            <button class="enter-class-btn">💻 Entrar a Clase Virtual</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const BASE_SCHEDULE_SLOTS = [
+        {
+          id: 1,
+          label: "1.ª Hora",
+          start: "07:00",
+          end: "07:55",
+          startMin: 7 * 60,
+          endMin: 7 * 60 + 55,
+        },
+        {
+          id: 2,
+          label: "2.ª Hora",
+          start: "07:55",
+          end: "08:50",
+          startMin: 7 * 60 + 55,
+          endMin: 8 * 60 + 50,
+        },
+        {
+          id: 3,
+          label: "3.ª Hora",
+          start: "08:50",
+          end: "09:45",
+          startMin: 8 * 60 + 50,
+          endMin: 9 * 60 + 45,
+        },
+        {
+          id: 4,
+          label: "4.ª Hora",
+          start: "10:15",
+          end: "11:10",
+          startMin: 10 * 60 + 15,
+          endMin: 11 * 60 + 10,
+        },
+        {
+          id: 5,
+          label: "5.ª Hora",
+          start: "11:10",
+          end: "12:05",
+          startMin: 11 * 60 + 10,
+          endMin: 12 * 60 + 5,
+        },
+        {
+          id: 6,
+          label: "6.ª Hora",
+          start: "12:05",
+          end: "13:00",
+          startMin: 12 * 60 + 5,
+          endMin: 13 * 60,
+        },
+      ];
+
+      function getScheduleSlotsForDay(day) {
+        return BASE_SCHEDULE_SLOTS;
+      }
+
+      const classList = [
+        // LUNES
+        {
+          day: 1,
+          startSlot: 1,
+          endSlot: 2,
+          name: "Filosofía",
+          link: "https://meet.google.com/qco-ioyr-ida",
+        },
+        {
+          day: 1,
+          startSlot: 3,
+          endSlot: 4,
+          name: "Inglés",
+          link: "https://meet.google.com/xmi-ghkx-vpr",
+        },
+        {
+          day: 1,
+          startSlot: 5,
+          endSlot: 6,
+          name: "Ciencias Económicas",
+          link: "https://meet.google.com/urg-duxf-nrh",
+        },
+
+        // MARTES
+        {
+          day: 2,
+          startSlot: 1,
+          endSlot: 1,
+          name: "Tecnología e Informática",
+          link: "https://meet.google.com/qww-tsux-gvn",
+        },
+        {
+          day: 2,
+          startSlot: 2,
+          endSlot: 3,
+          name: "Química",
+          link: "https://meet.google.com/uhv-avug-zzd",
+        },
+        {
+          day: 2,
+          startSlot: 4,
+          endSlot: 4,
+          name: "Educacion Fisica",
+          link: "https://meet.google.com/anj-thus-pzc",
+        },
+        {
+          day: 2,
+          startSlot: 5,
+          endSlot: 6,
+          name: "Física",
+          link: "https://meet.google.com/xcc-tzfm-keb",
+        },
+
+        // MIÉRCOLES
+        {
+          day: 3,
+          startSlot: 1,
+          endSlot: 1,
+          name: "Física",
+          link: "https://meet.google.com/xcc-tzfm-keb",
+        },
+        {
+          day: 3,
+          startSlot: 2,
+          endSlot: 2,
+          name: "Educación Religiosa",
+          link: "https://meet.google.com/efd-vhwp-xfi",
+        },
+        {
+          day: 3,
+          startSlot: 3,
+          endSlot: 4,
+          name: "Lengua Castellana",
+          link: "https://meet.google.com/wah-hoig-xhx",
+          alternateLink: "https://meet.google.com/iec-uvas-vnx",
+        },
+        {
+          day: 3,
+          startSlot: 5,
+          endSlot: 5,
+          name: "Educación Física",
+          link: "https://meet.google.com/anj-thus-pzc",
+        },
+        {
+          day: 3,
+          startSlot: 6,
+          endSlot: 6,
+          name: "Matemáticas",
+          link: "https://meet.google.com/yzn-qgqp-jfd",
+        },
+
+        // JUEVES
+        {
+          day: 4,
+          startSlot: 1,
+          endSlot: 2,
+          name: "Ciencias Sociales",
+          link: "https://meet.google.com/xwf-mfgo-cri",
+        },
+        {
+          day: 4,
+          startSlot: 3,
+          endSlot: 4,
+          name: "Biología",
+          link: "https://meet.google.com/twx-vnav-uyj",
+        },
+        {
+          day: 4,
+          startSlot: 5,
+          endSlot: 6,
+          name: "Educación Artística",
+          link: "https://meet.google.com/okn-vgvd-wdn",
+        },
+
+        // VIERNES
+        {
+          day: 5,
+          startSlot: 1,
+          endSlot: 1,
+          name: "Educación Ética",
+          link: "https://meet.google.com/efd-vhwp-xfi",
+        },
+        {
+          day: 5,
+          startSlot: 2,
+          endSlot: 3,
+          name: "Emprendimiento",
+          link: "https://meet.google.com/wou-hbtc-bjk",
+        },
+        {
+          day: 5,
+          startSlot: 4,
+          endSlot: 4,
+          name: "Lengua Castellana",
+          link: "https://meet.google.com/wah-hoig-xhx",
+          alternateLink: "https://meet.google.com/iec-uvas-vnx",
+        },
+        {
+          day: 5,
+          startSlot: 5,
+          endSlot: 6,
+          name: "Matemáticas",
+          link: "https://meet.google.com/yzn-qgqp-jfd",
+        },
+      ];
+
+      let currentDay = new Date().getDay();
+      if (currentDay < 1 || currentDay > 5) currentDay = 1;
+      const clockDisplay = document.getElementById("clockDisplay");
+      const dayButtons = document.querySelectorAll(".day-btn");
+      const selectedDayTitle = document.getElementById("selectedDayTitle");
+      const timeline = document.getElementById("timeline");
+      const themeToggleBtn = document.getElementById("themeToggleBtn");
+      // Elementos de la tarjeta superior
+      const liveTagText = document.getElementById("liveTagText");
+      const liveClassTitle = document.getElementById("liveClassTitle");
+      const liveCountdown = document.getElementById("liveCountdown");
+      const liveEndText = document.getElementById("liveEndText");
+      const progressBarFill = document.getElementById("progressBarFill");
+
+      const dayNames = [
+        "",
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+      ];
+
+      function init() {
+        setupEventListeners();
+        selectDay(currentDay);
+        updateClockAndLiveCard();
+        setInterval(updateClockAndLiveCard, 1000);
+      }
+
+      function setupEventListeners() {
+        dayButtons.forEach((btn) => {
+          btn.addEventListener("click", () =>
+            selectDay(parseInt(btn.getAttribute("data-day"))),
+          );
         });
-      });
 
-      closeClassModalBtn.addEventListener('click', () => classModal.classList.remove('open'));
-
-      classForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (!isAdminLoggedIn) return;
-
-        const editingId = document.getElementById('editingClassId').value;
-        const startSlot = parseInt(document.getElementById('inputStartSlot').value);
-        const endSlot = parseInt(document.getElementById('inputEndSlot').value);
-        const name = document.getElementById('inputName').value.trim();
-        const teacher = document.getElementById('inputTeacher').value.trim();
-        const link = document.getElementById('inputLink').value.trim();
-
-        // Validaciones del rango de tiempo
-        if (endSlot < startSlot) {
-          showFormError("La hora final debe ser mayor o igual a la de inicio.");
-          return;
-        }
-
-        if (startSlot <= 3 && endSlot >= 4) {
-          showFormError("Una clase no puede abarcar el horario del descanso.");
-          return;
-        }
-
-        // Revisar superposiciones
-        const conflict = classList.find(c => {
-          if (c.day !== currentDay) return false;
-          if (editingId && c.id === editingId) return false;
-          return (startSlot <= c.endSlot && endSlot >= c.startSlot);
+        themeToggleBtn.addEventListener("click", () => {
+          document.body.classList.toggle("light-theme");
+          themeToggleBtn.textContent = document.body.classList.contains(
+            "light-theme",
+          )
+            ? "☀️"
+            : "🌙";
         });
+      }
 
-        if (conflict) {
-          showFormError("El rango seleccionado se cruza con otra clase ya agendada.");
-          return;
-        }
-
-        if (editingId) {
-          const index = classList.findIndex(c => c.id === editingId);
-          if (index !== -1) {
-            classList[index] = { id: editingId, day: currentDay, startSlot, endSlot, name, teacher, link };
-          }
-        } else {
-          const newClass = {
-            id: 'class_' + Date.now(),
-            day: currentDay,
-            startSlot,
-            endSlot,
-            name,
-            teacher,
-            link
-          };
-          classList.push(newClass);
-        }
-
-        localStorage.setItem('virtual_classes_multislot_db', JSON.stringify(classList));
-        classModal.classList.remove('open');
-        classForm.reset();
+      function selectDay(day) {
+        currentDay = day;
+        dayButtons.forEach((btn) => {
+          btn.classList.toggle(
+            "active",
+            parseInt(btn.getAttribute("data-day")) === day,
+          );
+        });
+        selectedDayTitle.textContent = `Horario del ${dayNames[day]}`;
         renderTimeline();
-        updateClockAndStatus();
-      });
-
-      themeToggleBtn.addEventListener('click', () => {
-        document.body.classList.toggle('light-theme');
-        themeToggleBtn.textContent = document.body.classList.contains('light-theme') ? '☀️' : '🌙';
-      });
-    }
-
-    function showFormError(msg) {
-      classFormError.textContent = msg;
-      classFormError.style.display = 'block';
-    }
-
-    function selectDay(day) {
-      currentDay = day;
-      dayButtons.forEach(btn => {
-        if (parseInt(btn.getAttribute('data-day')) === day) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
-      selectedDayTitle.textContent = `Horario del ${dayNames[day]}`;
-      renderTimeline();
-    }
-
-    function openModalForCreate(startSlot = 1) {
-      if (!isAdminLoggedIn) return;
-      document.getElementById('modalTitle').textContent = "Asignar Clase Virtual";
-      document.getElementById('editingClassId').value = "";
-      document.getElementById('inputStartSlot').value = startSlot;
-      document.getElementById('inputEndSlot').value = startSlot;
-      document.getElementById('inputName').value = "";
-      document.getElementById('inputTeacher').value = "";
-      document.getElementById('inputLink').value = "";
-      classFormError.style.display = 'none';
-      classModal.classList.add('open');
-    }
-
-    function openModalForEdit(classId) {
-      if (!isAdminLoggedIn) return;
-      const classObj = classList.find(c => c.id === classId);
-      if (!classObj) return;
-
-      document.getElementById('modalTitle').textContent = "Editar Clase Virtual";
-      document.getElementById('editingClassId').value = classObj.id;
-      document.getElementById('inputStartSlot').value = classObj.startSlot;
-      document.getElementById('inputEndSlot').value = classObj.endSlot;
-      document.getElementById('inputName').value = classObj.name || "";
-      document.getElementById('inputTeacher').value = classObj.teacher || "";
-      document.getElementById('inputLink').value = classObj.link || "";
-      classFormError.style.display = 'none';
-      classModal.classList.add('open');
-    }
-
-    function deleteClass(classId, event) {
-      if (event) event.stopPropagation();
-      if (!isAdminLoggedIn) return;
-      classList = classList.filter(c => c.id !== classId);
-      localStorage.setItem('virtual_classes_multislot_db', JSON.stringify(classList));
-      renderTimeline();
-      updateClockAndStatus();
-    }
-
-    function launchClassLink(url) {
-      if (url) {
-        window.open(url, '_blank');
       }
-    }
 
-    function renderTimeline() {
-      timeline.innerHTML = '';
-      const now = new Date();
-      const realDay = now.getDay();
-      const currentMin = now.getHours() * 60 + now.getMinutes();
+      function launchClassLink(url) {
+        if (url) window.open(url, "_blank");
+      }
 
-      let skipSlotsCount = 0;
+      function renderTimeline() {
+        timeline.innerHTML = "";
+        const now = new Date();
+        const realDay = now.getDay();
+        const currentMin = now.getHours() * 60 + now.getMinutes();
+        const scheduleSlots = getScheduleSlotsForDay(currentDay);
 
-      SCHEDULE_SLOTS.forEach((slot) => {
-        if (skipSlotsCount > 0) {
-          skipSlotsCount--;
-          return;
-        }
+        let skipSlotsCount = 0;
 
-        const slotDiv = document.createElement('div');
-        slotDiv.className = 'time-slot';
-
-        if (slot.isBreak) {
-          slotDiv.classList.add('break-slot');
-          slotDiv.innerHTML = `
-            <div class="slot-header">
-              <span>☕ ${slot.label}</span>
-              <span>${slot.start} - ${slot.end}</span>
-            </div>
-            <div style="font-size: 0.85rem; color: var(--break-color); font-weight: 600;">Recreo / Receso escolar</div>
-          `;
-          timeline.appendChild(slotDiv);
-          return;
-        }
-
-        const currentClass = classList.find(c => c.day === currentDay && c.startSlot === slot.id);
-
-        if (currentClass) {
-          const startSlotObj = SCHEDULE_SLOTS.find(s => s.id === currentClass.startSlot);
-          const endSlotObj = SCHEDULE_SLOTS.find(s => s.id === currentClass.endSlot);
-
-          skipSlotsCount = (currentClass.endSlot - currentClass.startSlot);
-
-          if (realDay === currentDay && currentMin >= startSlotObj.startMin && currentMin < endSlotObj.endMin) {
-            slotDiv.classList.add('active-now');
+        scheduleSlots.forEach((slot) => {
+          if (skipSlotsCount > 0) {
+            skipSlotsCount--;
+            return;
           }
 
-          slotDiv.classList.add('clickable-card');
-          slotDiv.onclick = () => launchClassLink(currentClass.link);
+          const slotDiv = document.createElement("div");
+          slotDiv.className = "time-slot";
 
-          const hourLabel = currentClass.startSlot === currentClass.endSlot
-            ? `${startSlotObj.label}`
-            : `${startSlotObj.label} a ${endSlotObj.label}`;
+          const currentClass = classList.find(
+            (c) => c.day === currentDay && c.startSlot === slot.id,
+          );
 
-          slotDiv.innerHTML = `
+          if (currentClass) {
+            const startSlotObj = scheduleSlots.find(
+              (s) => s.id === currentClass.startSlot,
+            );
+            const endSlotObj = scheduleSlots.find(
+              (s) => s.id === currentClass.endSlot,
+            );
+
+            skipSlotsCount = currentClass.endSlot - currentClass.startSlot;
+
+            if (
+              realDay === currentDay &&
+              currentMin >= startSlotObj.startMin &&
+              currentMin < endSlotObj.endMin
+            ) {
+              slotDiv.classList.add("active-now");
+            }
+
+            const hourLabel =
+              currentClass.startSlot === currentClass.endSlot
+                ? `${startSlotObj.label}`
+                : `${startSlotObj.label} a ${endSlotObj.label}`;
+
+            slotDiv.innerHTML = `
             <div class="slot-header">
               <span>${hourLabel} (${startSlotObj.start} - ${endSlotObj.end})</span>
-              ${isAdminLoggedIn ? `
-                <div>
-                  <button class="action-btn" onclick="event.stopPropagation(); openModalForEdit('${currentClass.id}')">✏️</button>
-                  <button class="action-btn" onclick="deleteClass('${currentClass.id}', event)">🗑️</button>
-                </div>
-              ` : ''}
             </div>
             <div class="class-card">
-              <div>
-                <div class="class-title">${currentClass.name}</div>
-                ${currentClass.teacher ? `<div class="class-details">Profesor: ${currentClass.teacher}</div>` : ''}
-              </div>
-              <button class="enter-class-btn">💻 Entrar a Clase</button>
+              <div class="class-title">${currentClass.name}</div>
+              ${
+                currentClass.link
+                  ? `
+                <div class="class-links">
+                  <button class="enter-class-btn">💻 Entrar a Clase Virtual</button>
+                  ${currentClass.alternateLink ? `<button class="enter-class-btn alternate-link-btn">🔗 Enlace alternativo</button>` : ""}
+                </div>
+              `
+                  : ""
+              }
             </div>
           `;
-        } else {
-          slotDiv.innerHTML = `
+
+            const primaryButton = slotDiv.querySelector(
+              ".enter-class-btn:not(.alternate-link-btn)",
+            );
+            primaryButton?.addEventListener("click", (event) => {
+              event.stopPropagation();
+              launchClassLink(currentClass.link);
+            });
+
+            const alternateButton = slotDiv.querySelector(
+              ".alternate-link-btn",
+            );
+            alternateButton?.addEventListener("click", (event) => {
+              event.stopPropagation();
+              launchClassLink(currentClass.alternateLink);
+            });
+          } else {
+            slotDiv.innerHTML = `
             <div class="slot-header">
               <span>${slot.label} (${slot.start} - ${slot.end})</span>
             </div>
-            <div class="empty-slot">
-              <span>Hora Libre</span>
-              ${isAdminLoggedIn ? `<button class="add-inline-btn" onclick="openModalForCreate(${slot.id})">+ Asignar</button>` : ''}
-            </div>
+            <div class="empty-slot">Hora Libre</div>
           `;
-        }
+          }
 
-        timeline.appendChild(slotDiv);
-      });
-    }
-
-    function updateClockAndStatus() {
-      const now = new Date();
-      const daysStr = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-      
-      const dayName = daysStr[now.getDay()];
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-
-      clockDisplay.textContent = `${dayName}, ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-      const today = now.getDay();
-      const currentMin = hours * 60 + minutes;
-
-      if (today === 0 || today === 6) {
-        statusMainText.textContent = "Fin de semana";
-        statusSubText.textContent = "No hay clases programadas para hoy.";
-        return;
+          timeline.appendChild(slotDiv);
+        });
       }
 
-      const currentSlot = SCHEDULE_SLOTS.find(s => currentMin >= s.startMin && currentMin < s.endMin);
+      function updateClockAndLiveCard() {
+        const now = new Date();
+        const daysStr = [
+          "Domingo",
+          "Lunes",
+          "Martes",
+          "Miércoles",
+          "Jueves",
+          "Viernes",
+          "Sábado",
+        ];
 
-      if (currentSlot) {
-        if (currentSlot.isBreak) {
-          statusMainText.textContent = "☕ En Descanso / Receso";
-          statusSubText.textContent = `Termina a las ${currentSlot.end}.`;
-        } else {
-          const activeClass = classList.find(c => c.day === today && currentSlot.id >= c.startSlot && currentSlot.id <= c.endSlot);
+        const dayName = daysStr[now.getDay()];
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const seconds = now.getSeconds();
+
+        clockDisplay.textContent = `${dayName}, ${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+        const today = now.getDay();
+        const currentMin = hours * 60 + minutes;
+        const currentSec = seconds;
+
+        // 1. Fin de semana
+        if (today === 0 || today === 6) {
+          liveTagText.textContent = "FIN DE SEMANA";
+          liveClassTitle.textContent = "Sin clases programadas";
+          liveCountdown.textContent = "¡Disfruta tu descanso!";
+          liveEndText.textContent = "";
+          progressBarFill.style.width = "0%";
+          return;
+        }
+
+        const scheduleSlotsForToday = getScheduleSlotsForDay(today);
+        const activeSlot = scheduleSlotsForToday.find(
+          (s) => currentMin >= s.startMin && currentMin < s.endMin,
+        );
+
+        // 2. Durante horario escolar (07:00 a 14:50)
+        if (activeSlot) {
+          const activeClass = classList.find(
+            (c) =>
+              c.day === today &&
+              activeSlot.id >= c.startSlot &&
+              activeSlot.id <= c.endSlot,
+          );
+          const endSlotObj = activeClass
+            ? scheduleSlotsForToday.find((s) => s.id === activeClass.endSlot)
+            : activeSlot;
+
+          const totalSecondsInClass =
+            (endSlotObj.endMin -
+              (activeClass
+                ? scheduleSlotsForToday.find(
+                    (s) => s.id === activeClass.startSlot,
+                  ).startMin
+                : activeSlot.startMin)) *
+            60;
+          const elapsedSeconds =
+            (currentMin -
+              (activeClass
+                ? scheduleSlotsForToday.find(
+                    (s) => s.id === activeClass.startSlot,
+                  ).startMin
+                : activeSlot.startMin)) *
+              60 +
+            currentSec;
+          const remainingSeconds = totalSecondsInClass - elapsedSeconds;
+
+          const minLeft = Math.floor(remainingSeconds / 60);
+          const secLeft = remainingSeconds % 60;
+
+          const progressPercent = Math.min(
+            100,
+            Math.max(0, (elapsedSeconds / totalSecondsInClass) * 100),
+          );
+          progressBarFill.style.width = `${progressPercent}%`;
+
+          liveEndText.textContent = `Termina a las ${endSlotObj.end}`;
+
           if (activeClass) {
-            const endSlotObj = SCHEDULE_SLOTS.find(s => s.id === activeClass.endSlot);
-            statusMainText.textContent = `En Clase: ${activeClass.name}`;
-            const minLeft = endSlotObj.endMin - currentMin;
-            statusSubText.textContent = `Termina a las ${endSlotObj.end} (quedan ${minLeft} min).`;
+            liveTagText.textContent = "CLASE EN VIVO";
+            liveClassTitle.textContent = activeClass.name;
+            liveCountdown.textContent = `Faltan ${minLeft}m ${secLeft.toString().padStart(2, "0")}s`;
           } else {
-            statusMainText.textContent = `Hora Libre (${currentSlot.label})`;
-            statusSubText.textContent = `Termina a las ${currentSlot.end}.`;
+            liveTagText.textContent = "HORA LIBRE";
+            liveClassTitle.textContent = "Sin materia asignada";
+            liveCountdown.textContent = `Faltan ${minLeft}m ${secLeft.toString().padStart(2, "0")}s`;
           }
         }
-      } else {
-        const nextSlot = SCHEDULE_SLOTS.find(s => s.startMin > currentMin);
-        if (nextSlot) {
-          const minUntil = nextSlot.startMin - currentMin;
-          let nextName = "Hora Libre";
+        // 3. Fuera de las horas de clase principales (ej. Receso intermedio o antes/después)
+        else {
+          const nextSlot = scheduleSlotsForToday.find(
+            (s) => s.startMin > currentMin,
+          );
 
-          if (nextSlot.isBreak) {
-            nextName = "Descanso";
-          } else {
-            const nextClass = classList.find(c => c.day === today && nextSlot.id >= c.startSlot && nextSlot.id <= c.endSlot);
-            if (nextClass) nextName = nextClass.name;
+          if (nextSlot) {
+            const firstSlotMin = scheduleSlotsForToday[0].startMin;
+
+            // Si es antes de las 7:00 AM
+            if (currentMin < firstSlotMin) {
+              const nextClass = classList.find(
+                (c) => c.day === today && c.startSlot === 1,
+              );
+              const minUntil = firstSlotMin - currentMin;
+              liveTagText.textContent = "PRÓXIMA CLASE";
+              liveClassTitle.textContent = nextClass
+                ? nextClass.name
+                : "Inicio de Jornada";
+              liveCountdown.textContent = `Empieza en ${Math.floor(minUntil / 60)}h ${minUntil % 60}m`;
+              liveEndText.textContent = `Inicia a las ${scheduleSlotsForToday[0].start}`;
+              progressBarFill.style.width = "0%";
+            }
+            // Si es un descanso/receso entre clases (ej. 09:45 a 10:15)
+            else {
+              const nextClass = classList.find(
+                (c) =>
+                  c.day === today &&
+                  nextSlot.id >= c.startSlot &&
+                  nextSlot.id <= c.endSlot,
+              );
+              const minUntil = nextSlot.startMin - currentMin;
+              liveTagText.textContent = "RECESO / DESCANSO";
+              liveClassTitle.textContent = nextClass
+                ? `Siguiente: ${nextClass.name}`
+                : "Siguiente Hora";
+              liveCountdown.textContent = `Reanuda en ${minUntil} min`;
+              liveEndText.textContent = `Entrada a las ${nextSlot.start}`;
+              progressBarFill.style.width = "100%";
+            }
           }
-
-          statusMainText.textContent = `Siguiente: ${nextName}`;
-          statusSubText.textContent = `Empieza en ${minUntil} min (a las ${nextSlot.start}).`;
-        } else {
-          statusMainText.textContent = "Jornada finalizada";
-          statusSubText.textContent = "Has completado todas las clases de hoy.";
+          // Después de la 1:00 PM
+          else {
+            liveTagText.textContent = "JORNADA FINALIZADA";
+            liveClassTitle.textContent = "¡Has terminado por hoy!";
+            liveCountdown.textContent = "Nos vemos mañana";
+            liveEndText.textContent = "";
+            progressBarFill.style.width = "100%";
+          }
         }
       }
-    }
 
-    window.openModalForEdit = openModalForEdit;
-    window.openModalForCreate = openModalForCreate;
-    window.deleteClass = deleteClass;
-
-    init();
-  </script>
-</body>
+      init();
+    </script>
+  </body>
 </html>
